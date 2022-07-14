@@ -7,7 +7,9 @@ from views.help_view import (
 )
 from buttons.help_categories import (
     HelpSuperUserBtn as superuser_btn,
-    HelpUserStrikedBtn as user_strike_btn,
+    HelpModelsBtn as models_btn,
+    HelpUserBtn as user_btn,
+    HelpUserStrikeBtn as user_strike_btn,
     HelpPlayerStrikeBtn as player_strike_btn)
 from data import StrikeCommander_Client_Data as Client_Data
 from responders import (
@@ -57,6 +59,28 @@ def help_main(
 
                 button_list.append(
                     superuser_btn(bot=bot, client_data=client_data))
+
+            continue
+
+        elif category.brief == "models":
+            help_dict['field_dict_list'].append({
+                'name': f"{category.emoji} {category.name}",
+                'value': category.description
+            })
+
+            button_list.append(
+                models_btn(bot=bot, client_data=client_data))
+
+            continue
+
+        elif category.brief == "user":
+            help_dict['field_dict_list'].append({
+                'name': f"{category.emoji} {category.name}",
+                'value': category.description
+            })
+
+            button_list.append(
+                user_btn(bot=bot, client_data=client_data))
 
             continue
 

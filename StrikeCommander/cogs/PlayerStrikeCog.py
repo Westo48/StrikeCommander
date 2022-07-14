@@ -44,7 +44,6 @@ class PlayerStrike(commands.Cog):
     ):
         """
             player strike show command
-
             Parameters
             ----------
             option (optional): options for player strike show command
@@ -125,7 +124,7 @@ class PlayerStrike(commands.Cog):
 
         embed_thumbnail = discord_responder.get_town_hall_url(player)
 
-        if option == "active":
+        if option == "overview":
             try:
                 player_strike_list = (
                     player_strike_responder.find_player_strike_active(
@@ -136,7 +135,38 @@ class PlayerStrike(commands.Cog):
                     title=f"{player.name} {player.tag} Active Player Strikes",
                     description=(
                         f"Linked User: {user_string}\n"
-                        f"Active Player Strike Count: 0"))
+                        f"Active Player Strike Count: **0**"))
+
+                embed_list = discord_responder.embed_message(
+                    icon_url=inter.bot.user.avatar.url,
+                    title=response.title,
+                    description=response.description,
+                    bot_user_name=inter.me.display_name,
+                    thumbnail=embed_thumbnail,
+                    field_list=response.field_dict_list,
+                    author=inter.author)
+
+                await discord_responder.send_embed_list(inter, embed_list)
+
+                return
+
+            response = player_strike_responder.get_player_strike_overview(
+                player=player,
+                user_string=user_string,
+                player_strike_list=player_strike_list)
+
+        elif option == "active":
+            try:
+                player_strike_list = (
+                    player_strike_responder.find_player_strike_active(
+                        player_tag=player.tag))
+
+            except NotFoundError as arg:
+                response = ResponderModel(
+                    title=f"{player.name} {player.tag} Active Player Strikes",
+                    description=(
+                        f"Linked User: {user_string}\n"
+                        f"Active Player Strike Count: **0**"))
 
                 embed_list = discord_responder.embed_message(
                     icon_url=inter.bot.user.avatar.url,
@@ -167,7 +197,7 @@ class PlayerStrike(commands.Cog):
                     title=f"{player.name} {player.tag} Player Strikes",
                     description=(
                         f"Linked User: {user_string}\n"
-                        f"Player Strike Count: 0"))
+                        f"Player Strike Count: **0**"))
 
                 embed_list = discord_responder.embed_message(
                     icon_url=inter.bot.user.avatar.url,
@@ -202,7 +232,10 @@ class PlayerStrike(commands.Cog):
             field_list=response.field_dict_list,
             author=inter.author)
 
-        await discord_responder.send_embed_list(inter, embed_list)
+        await discord_responder.send_embed_list(
+            inter,
+            embed_list,
+            content=response.content)
 
     @playerstrike.sub_command()
     async def clan(
@@ -214,7 +247,6 @@ class PlayerStrike(commands.Cog):
     ):
         """
             player strike clan command
-
             Parameters
             ----------
             option (optional): options for player strike clan command
@@ -287,46 +319,28 @@ class PlayerStrike(commands.Cog):
             title=f"{clan.name} {clan.tag}",
             description=f"Member Count: {clan.member_count}")
 
-        embed_list = []
-
-        embed_list.extend(discord_responder.embed_message(
-            icon_url=inter.bot.user.avatar.url,
-            title=clan_response.title,
-            description=clan_response.description,
-            bot_user_name=inter.me.display_name,
-            thumbnail=clan.badge.small,
-            field_list=clan_response.field_dict_list,
-            author=inter.author))
+        field_dict_list = []
+        message_content = ""
 
         async for player in clan.get_detailed_members():
             db_player = db_responder.read_player_from_tag(
                 player_tag=player.tag)
 
             if db_player is None:
-                embed_description = (
-                    f"{player.name} {player.tag} "
-                    f"not found in database")
-
-                embed_list.extend(discord_responder.embed_message(
-                    icon_url=inter.bot.user.avatar.url,
-                    bot_user_name=inter.me.display_name,
-                    description=embed_description,
-                    author=inter.author))
+                field_dict_list.append({
+                    'name': f"{player.name} {player.tag}",
+                    'value': f"not found in database",
+                    'inline': False})
 
                 continue
 
             db_user = db_responder.read_user_from_tag(player_tag=player.tag)
 
             if db_user is None:
-                embed_description = (
-                    f"could not find user with tag {player.tag} "
-                    f"in the database")
-
-                embed_list.extend(discord_responder.embed_message(
-                    icon_url=inter.bot.user.avatar.url,
-                    bot_user_name=inter.me.display_name,
-                    description=embed_description,
-                    author=inter.author))
+                field_dict_list.append({
+                    'name': f"user with tag {player.tag}",
+                    'value': f"not found in the database",
+                    'inline': False})
 
                 continue
 
@@ -339,7 +353,28 @@ class PlayerStrike(commands.Cog):
             else:
                 user_string = f"{user.mention}"
 
-            if option == "active":
+            if option == "overview":
+                try:
+                    player_strike_list = (
+                        player_strike_responder.find_player_strike_active(
+                            player_tag=player.tag))
+
+                    response = player_strike_responder.get_player_strike_overview(
+                        player=player,
+                        user_string=user_string,
+                        player_strike_list=player_strike_list)
+
+                    if response.content is not None:
+                        message_content += f"{response.content}\n\n"
+
+                except NotFoundError:
+                    response = ResponderModel(
+                        title=f"{player.name} {player.tag} Active Player Strikes",
+                        description=(
+                            f"Linked User: {user_string}\n"
+                            f"Active Player Strike Count: **0**"))
+
+            elif option == "active":
                 try:
                     player_strike_list = (
                         player_strike_responder.find_player_strike_active(
@@ -350,12 +385,15 @@ class PlayerStrike(commands.Cog):
                         user_string=user_string,
                         player_strike_list=player_strike_list)
 
+                    if response.content is not None:
+                        message_content += f"{response.content}\n\n"
+
                 except NotFoundError:
                     response = ResponderModel(
                         title=f"{player.name} {player.tag} Active Player Strikes",
                         description=(
                             f"Linked User: {user_string}\n"
-                            f"Active Player Strike Count: 0"))
+                            f"Active Player Strike Count: **0**"))
 
             elif option == "all":
                 try:
@@ -368,12 +406,15 @@ class PlayerStrike(commands.Cog):
                         user_string=user_string,
                         player_strike_list=player_strike_list)
 
+                    if response.content is not None:
+                        message_content += f"{response.content}\n\n"
+
                 except NotFoundError:
                     response = ResponderModel(
                         title=f"{player.name} {player.tag} Player Strikes",
                         description=(
                             f"Linked User: {user_string}\n"
-                            f"Player Strike Count: 0"))
+                            f"Player Strike Count: **0**"))
 
             else:
                 response.field_dict_list = [{
@@ -381,18 +422,31 @@ class PlayerStrike(commands.Cog):
                     'value': "please select a different option"
                 }]
 
-            embed_thumbnail = discord_responder.get_town_hall_url(player)
+            # response title or description were not passed
+            if (response.title is not None
+                    and response.description is not None):
+                field_dict_list.append({
+                    'name': response.title,
+                    'value': response.description,
+                    'inline': False
+                })
 
-            embed_list.extend(discord_responder.embed_message(
-                icon_url=inter.bot.user.avatar.url,
-                title=response.title,
-                description=response.description,
-                bot_user_name=inter.me.display_name,
-                thumbnail=embed_thumbnail,
-                field_list=response.field_dict_list,
-                author=inter.author))
+        if message_content == "":
+            message_content = None
 
-        await discord_responder.send_embed_list(inter, embed_list)
+        embed_list = discord_responder.embed_message(
+            icon_url=inter.bot.user.avatar.url,
+            title=clan_response.title,
+            description=clan_response.description,
+            bot_user_name=inter.me.display_name,
+            thumbnail=clan.badge.small,
+            field_list=field_dict_list,
+            author=inter.author)
+
+        await discord_responder.send_embed_list(
+            inter,
+            embed_list,
+            content=message_content)
 
     @playerstrike.sub_command()
     async def add(
@@ -403,12 +457,11 @@ class PlayerStrike(commands.Cog):
                 name=discord_utils.command_param_dict['required_strike_model_name'].name,
                 description=discord_utils.command_param_dict['required_strike_model_name'].description,
                 default=discord_utils.command_param_dict['required_strike_model_name'].default,
-                autocomplete=discord_utils.autocomp_strike_model_name_all),
+                autocomplete=discord_utils.autocomp_strike_model_name_active),
             rollover_days: int = discord_utils.command_param_dict['rollover_days'],
             persistent: bool = discord_utils.command_param_dict['persistent']):
         """
             player strike add command
-
             Parameters
             ----------
             `tag` (str): player tag to add Player Strike
@@ -430,97 +483,102 @@ class PlayerStrike(commands.Cog):
             await discord_responder.send_embed_list(inter, embed_list)
             return
 
-        player: Player = await clash_responder.get_player(tag, self.coc_client)
+        player_tag_list = tag.split()
 
-        if player is None:
-            embed_description = f"could not find player with tag {tag}"
+        for tag in player_tag_list:
+            player: Player = await clash_responder.get_player(tag, self.coc_client)
+
+            if player is None:
+                embed_description = f"could not find player with tag {tag}"
+
+                embed_list = discord_responder.embed_message(
+                    icon_url=inter.bot.user.avatar.url,
+                    bot_user_name=inter.me.display_name,
+                    description=embed_description,
+                    author=inter.author
+                )
+
+                await discord_responder.send_embed_list(inter, embed_list)
+                continue
+
+            db_player = db_responder.read_player_from_tag(
+                player_tag=player.tag)
+
+            if db_player is None:
+                embed_description = (
+                    f"{player.name} {player.tag} "
+                    f"not found in database")
+
+                embed_list = discord_responder.embed_message(
+                    icon_url=inter.bot.user.avatar.url,
+                    bot_user_name=inter.me.display_name,
+                    description=embed_description,
+                    author=inter.author
+                )
+
+                await discord_responder.send_embed_list(inter, embed_list)
+                continue
+
+            db_user = db_responder.read_user_from_tag(player_tag=player.tag)
+
+            if db_user is None:
+                embed_description = (
+                    f"could not find user with tag {player.tag} "
+                    f"in the database")
+
+                embed_list = discord_responder.embed_message(
+                    icon_url=inter.bot.user.avatar.url,
+                    bot_user_name=inter.me.display_name,
+                    description=embed_description,
+                    author=inter.author
+                )
+
+                await discord_responder.send_embed_list(inter, embed_list)
+                continue
+
+            user = get(inter.guild.members, id=db_user.discord_id)
+
+            # user not found in server
+            if user is None:
+                embed_description = (
+                    f"could not find user <@{db_user.discord_id}> "
+                    f"in the server")
+
+                embed_list = discord_responder.embed_message(
+                    icon_url=inter.bot.user.avatar.url,
+                    bot_user_name=inter.me.display_name,
+                    description=embed_description,
+                    author=inter.author
+                )
+
+                await discord_responder.send_embed_list(inter, embed_list)
+                continue
+
+            else:
+                user_string = f"{user.mention}"
+
+            response = player_strike_responder.add_player_strike(
+                player=player,
+                user_string=user_string,
+                strike_name=strike_name,
+                persistent=persistent,
+                rollover_days=rollover_days,
+                striker_user_id=inter.author.id
+            )
+
+            embed_thumbnail = discord_responder.get_town_hall_url(player)
 
             embed_list = discord_responder.embed_message(
                 icon_url=inter.bot.user.avatar.url,
+                title=response.title,
+                description=response.description,
                 bot_user_name=inter.me.display_name,
-                description=embed_description,
-                author=inter.author
-            )
+                thumbnail=embed_thumbnail,
+                field_list=response.field_dict_list,
+                author=inter.author)
 
-            await discord_responder.send_embed_list(inter, embed_list)
-            return
-
-        db_player = db_responder.read_player_from_tag(player_tag=player.tag)
-
-        if db_player is None:
-            embed_description = (
-                f"{player.name} {player.tag} "
-                f"not found in database")
-
-            embed_list = discord_responder.embed_message(
-                icon_url=inter.bot.user.avatar.url,
-                bot_user_name=inter.me.display_name,
-                description=embed_description,
-                author=inter.author
-            )
-
-            await discord_responder.send_embed_list(inter, embed_list)
-            return
-
-        db_user = db_responder.read_user_from_tag(player_tag=player.tag)
-
-        if db_user is None:
-            embed_description = (
-                f"could not find user with tag {player.tag} "
-                f"in the database")
-
-            embed_list = discord_responder.embed_message(
-                icon_url=inter.bot.user.avatar.url,
-                bot_user_name=inter.me.display_name,
-                description=embed_description,
-                author=inter.author
-            )
-
-            await discord_responder.send_embed_list(inter, embed_list)
-            return
-
-        user = get(inter.guild.members, id=db_user.discord_id)
-
-        # user not found in server
-        if user is None:
-            embed_description = (
-                f"could not find user <@{db_user.discord_id}> "
-                f"in the server")
-
-            embed_list = discord_responder.embed_message(
-                icon_url=inter.bot.user.avatar.url,
-                bot_user_name=inter.me.display_name,
-                description=embed_description,
-                author=inter.author
-            )
-
-            await discord_responder.send_embed_list(inter, embed_list)
-            return
-
-        else:
-            user_string = f"{user.mention}"
-
-        response = player_strike_responder.add_player_strike(
-            player=player,
-            user_string=user_string,
-            strike_name=strike_name,
-            persistent=persistent,
-            rollover_days=rollover_days,
-            striker_user_id=inter.author.id
-        )
-
-        embed_thumbnail = discord_responder.get_town_hall_url(player)
-
-        embed_list = discord_responder.embed_message(
-            icon_url=inter.bot.user.avatar.url,
-            title=response.title,
-            description=response.description,
-            bot_user_name=inter.me.display_name,
-            thumbnail=embed_thumbnail,
-            field_list=response.field_dict_list,
-            author=inter.author)
-
-        await discord_responder.send_embed_list(inter, embed_list)
+            await discord_responder.send_embed_list(
+                inter, embed_list, content=response.content)
 
     @playerstrike.sub_command()
     async def war(
@@ -535,7 +593,6 @@ class PlayerStrike(commands.Cog):
         """
             adds Player Strikes to those who missed war attacks 
             to an ended war
-
             Parameters
             ----------
             option (optional): options for player strike war command
@@ -628,20 +685,8 @@ class PlayerStrike(commands.Cog):
         else:
             strike_model_name = "Missed War Attack"
 
-        war_response = ResponderModel(
-            title=f"{war.clan.name} {war.clan.tag}",
-            description=f"War Member Count: {len(war.clan.members)}")
-
-        embed_list = []
-
-        embed_list.extend(discord_responder.embed_message(
-            icon_url=inter.bot.user.avatar.url,
-            title=war_response.title,
-            description=war_response.description,
-            bot_user_name=inter.me.display_name,
-            thumbnail=war.clan.badge.small,
-            field_list=war_response.field_dict_list,
-            author=inter.author))
+        field_dict_list = []
+        message_content = "Users:\n\n"
 
         for player in war.clan.members:
             missing_attack_count = (
@@ -655,30 +700,20 @@ class PlayerStrike(commands.Cog):
                 player_tag=player.tag)
 
             if db_player is None:
-                embed_description = (
-                    f"{player.name} {player.tag} "
-                    f"not found in database")
-
-                embed_list.extend(discord_responder.embed_message(
-                    icon_url=inter.bot.user.avatar.url,
-                    bot_user_name=inter.me.display_name,
-                    description=embed_description,
-                    author=inter.author))
+                field_dict_list.append({
+                    'name': f"{player.name} {player.tag}",
+                    'value': f"not found in database",
+                    'inline': False})
 
                 continue
 
             db_user = db_responder.read_user_from_tag(player_tag=player.tag)
 
             if db_user is None:
-                embed_description = (
-                    f"could not find user with tag {player.tag} "
-                    f"in the database")
-
-                embed_list.extend(discord_responder.embed_message(
-                    icon_url=inter.bot.user.avatar.url,
-                    bot_user_name=inter.me.display_name,
-                    description=embed_description,
-                    author=inter.author))
+                field_dict_list.append({
+                    'name': f"user with tag {player.tag}",
+                    'value': f"not found in the database",
+                    'inline': False})
 
                 continue
 
@@ -697,7 +732,7 @@ class PlayerStrike(commands.Cog):
                 for missed_attack in range(missing_attack_count):
                     response = (
                         player_strike_responder.add_player_strike(
-                            player_tag=player.tag,
+                            player=player,
                             user_string=user_string,
                             strike_name=strike_model_name,
                             persistent=persistent,
@@ -709,7 +744,7 @@ class PlayerStrike(commands.Cog):
             elif option == "any":
                 response = (
                     player_strike_responder.add_player_strike(
-                        player_tag=player.tag,
+                        player=player,
                         user_string=user_string,
                         strike_name=strike_model_name,
                         persistent=persistent,
@@ -722,49 +757,71 @@ class PlayerStrike(commands.Cog):
                     'value': "please select a different option"
                 }]
 
-            embed_thumbnail = discord_responder.get_town_hall_url(player)
+            # content not passed by responder
+            if response.content is None:
+                message_content += f"{user_string}\n\n"
 
-            embed_list.extend(discord_responder.embed_message(
-                icon_url=inter.bot.user.avatar.url,
-                title=response.title,
-                description=response.description,
-                bot_user_name=inter.me.display_name,
-                thumbnail=embed_thumbnail,
-                field_list=response.field_dict_list,
-                author=inter.author))
+            # content passed by responder
+            else:
+                message_content += f"{response.content}\n\n"
 
-        # only embed in embed list is the initial war embed
-        if len(embed_list) == 1:
+            if (
+                response.title is not None
+                and response.description is not None
+            ):
+                field_dict_list.append({
+                    'name': response.title,
+                    'value': response.description,
+                    'inline': False
+                })
+
+        war_response = ResponderModel(
+            title=f"{war.clan.name} {war.clan.tag}",
+            description=f"Players Missing Attacks: {len(field_dict_list)}")
+
+        # no fields meaning nobody missed an attack
+        if len(field_dict_list) == 0:
             response = ResponderModel(
                 title=f"{war.clan.name} {war.clan.tag}",
                 description=(
                     f"all {len(war.clan.members)} {war.clan.name} "
                     f"war members attacked"))
 
-            embed_list.extend(discord_responder.embed_message(
-                icon_url=inter.bot.user.avatar.url,
-                title=response.title,
-                description=response.description,
-                bot_user_name=inter.me.display_name,
-                field_list=response.field_dict_list,
-                author=inter.author))
+            message_content = None
 
-        await discord_responder.send_embed_list(inter, embed_list)
+            field_dict_list.append({
+                'name': response.title,
+                'value': response.description,
+                'inline': False
+            })
+
+        embed_list = discord_responder.embed_message(
+            icon_url=inter.bot.user.avatar.url,
+            title=war_response.title,
+            description=war_response.description,
+            bot_user_name=inter.me.display_name,
+            thumbnail=war.clan.badge.small,
+            field_list=field_dict_list,
+            author=inter.author)
+
+        await discord_responder.send_embed_list(
+            inter, embed_list, content=message_content)
 
     @playerstrike.sub_command()
     async def edit(
             self,
             inter: ApplicationCommandInteraction,
-            option: str = discord_utils.command_param_dict['playerstrike_show'],
+            option: str = discord_utils.command_param_dict['playerstrike_edit'],
             tag: str = discord_utils.command_param_dict['required_player_tag'],
-            player_strike_id: int = discord_utils.command_param_dict['player_strike_id']):
+            player_strike_id: int = discord_utils.command_param_dict['player_strike_id'],
+            rollover_days: int = discord_utils.command_param_dict['required_rollover_days']):
         """
             player strike edit command
-
             Parameters
             ----------
             `tag` (str): player tag to edit Player Strike
             `player_strike_id` (int): ID of the Player Strike to edit
+            `rollover_days` (int): amount of rollover days
         """
 
         # player tag not supplied
@@ -851,11 +908,26 @@ class PlayerStrike(commands.Cog):
         else:
             user_string = f"{user.mention}"
 
-        response = (
-            player_strike_responder.edit_player_strike_toggle_persistent(
-                player=player,
-                strike_id=player_strike_id,
-                user_string=user_string))
+        if option == "toggle persistent":
+            response = (
+                player_strike_responder.edit_player_strike_toggle_persistent(
+                    player=player,
+                    strike_id=player_strike_id,
+                    user_string=user_string))
+
+        elif option == "rollover days":
+            response = (
+                player_strike_responder.edit_player_strike_rollover_days(
+                    player=player,
+                    strike_id=player_strike_id,
+                    user_string=user_string,
+                    rollover_days=rollover_days))
+
+        else:
+            response = ResponderModel(field_dict_list=[{
+                'name': "incorrect option selected",
+                'value': "please select a different option"
+            }])
 
         embed_thumbnail = discord_responder.get_town_hall_url(player)
 
@@ -868,7 +940,8 @@ class PlayerStrike(commands.Cog):
             field_list=response.field_dict_list,
             author=inter.author)
 
-        await discord_responder.send_embed_list(inter, embed_list)
+        await discord_responder.send_embed_list(
+            inter, embed_list, content=response.content)
 
     @playerstrike.sub_command()
     async def remove(
@@ -880,10 +953,9 @@ class PlayerStrike(commands.Cog):
             name=discord_utils.command_param_dict['required_removal_reason_model_name'].name,
             description=discord_utils.command_param_dict['required_removal_reason_model_name'].description,
             default=discord_utils.command_param_dict['required_removal_reason_model_name'].default,
-            autocomplete=discord_utils.autocomp_strike_model_name_all)):
+            autocomplete=discord_utils.autocomp_removal_reason_model_name_active)):
         """
             player strike remove command
-
             Parameters
             ----------
             `tag` (str): player tag to remove Player Strike
@@ -991,4 +1063,5 @@ class PlayerStrike(commands.Cog):
             field_list=response.field_dict_list,
             author=inter.author)
 
-        await discord_responder.send_embed_list(inter, embed_list)
+        await discord_responder.send_embed_list(
+            inter, embed_list, content=response.content)

@@ -404,7 +404,7 @@ class SuperUser(commands.Cog):
 
         if option == "delete":
             response = (
-                user_strike_responder.delete_user_strike_from_id(
+                player_strike_responder.delete_player_strike_from_id(
                     strike_id=strike_id))
 
         else:

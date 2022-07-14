@@ -13,6 +13,7 @@ from database.PlayerStrike import (
     select_player_strike_list_all,
     insert_player_strike,
     update_player_strike_toggle_persistent,
+    update_player_strike_rollover_days,
     update_player_strike_add_removal_reason,
     delete_player_strike)
 
@@ -21,7 +22,7 @@ from database.PlayerStrike import (
 
 def find_player_strike(player_tag: str, strike_id: int):
     """
-        returns Player Strike list
+        returns Player Strike
     """
 
     try:
@@ -73,14 +74,14 @@ def get_player_strike(
         returns ResponderModel
     """
 
+    responder = ResponderModel()
+
     # set title
-    title = f"{player.name} {player.tag} Player Strike"
+    responder.title = f"{player.name} {player.tag} Player Strike"
 
     # set description
-    description = (
+    responder.description = (
         f"Linked User: {user_string}")
-
-    field_dict_list = []
 
     # player strike ending string
     # player strike active string
@@ -117,21 +118,60 @@ def get_player_strike(
             f"{player_strike.date_ended.strftime('%d %b %Y')}\n"
             f"Rollover Days: {time_diff.days}")
 
-    field_dict_list.append({
+    responder.field_dict_list.append({
         'name': player_strike.strike_name,
         'value': (
             f"{active_string}"
             f"Player Strike ID: {player_strike.id}\n"
             f"Description: {player_strike.strike_description}\n"
-            f"Strike Weight: {player_strike.strike_weight}\n"
+            f"Strike Weight: **{player_strike.strike_weight}**\n"
             f"Create Date: "
             f"{player_strike.date_created.strftime('%d %b %Y')}\n"
             f"{ending_string}"),
         'inline': False})
 
-    return ResponderModel(
-        title=title, description=description,
-        field_dict_list=field_dict_list)
+    if player_strike.strike_weight >= 5:
+        responder.content = (
+            f"**"
+            f"{user_string}: {player.name} has accumulated a "
+            f"Strike Weight of {player_strike.strike_weight}, "
+            f"contact leadership to resolve strikes"
+            f"**")
+
+    return responder
+
+
+def get_player_strike_overview(
+        player: Player,
+        user_string: str,
+        player_strike_list: list[PlayerStrike]):
+    """
+        returns ResponderModel
+    """
+
+    responder = ResponderModel()
+
+    # set title
+    responder.title = f"{player.name} {player.tag} Active Player Strikes"
+
+    strike_weight_sum = sum(
+        player_strike.strike_weight for player_strike in player_strike_list)
+
+    # set description
+    responder.description = (
+        f"Linked User: {user_string}\n"
+        f"Active Player Strike Count: **{len(player_strike_list)}**\n"
+        f"Active Player Strike Weight: **{strike_weight_sum}**")
+
+    if strike_weight_sum >= 5:
+        responder.content = (
+            f"**"
+            f"{user_string}: {player.name} has accumulated a "
+            f"Strike Weight of {strike_weight_sum}, "
+            f"contact leadership to resolve strikes"
+            f"**")
+
+    return responder
 
 
 def get_player_strike_active(
@@ -142,19 +182,27 @@ def get_player_strike_active(
         returns ResponderModel
     """
 
+    responder = ResponderModel()
+
     # set title
-    title = f"{player.name} {player.tag} Active Player Strikes"
+    responder.title = f"{player.name} {player.tag} Active Player Strikes"
 
     strike_weight_sum = sum(
         player_strike.strike_weight for player_strike in player_strike_list)
 
     # set description
-    description = (
+    responder.description = (
         f"Linked User: {user_string}\n"
-        f"Active Player Strike Count: {len(player_strike_list)}\n"
-        f"Active Player Strike Weight: {strike_weight_sum}")
+        f"Active Player Strike Count: **{len(player_strike_list)}**\n"
+        f"Active Player Strike Weight: **{strike_weight_sum}**")
 
-    field_dict_list = []
+    if strike_weight_sum >= 5:
+        responder.content = (
+            f"**"
+            f"{user_string}: {player.name} has accumulated a "
+            f"Strike Weight of {strike_weight_sum}, "
+            f"contact leadership to resolve strikes"
+            f"**")
 
     for player_strike in player_strike_list:
 
@@ -193,21 +241,19 @@ def get_player_strike_active(
                 f"{player_strike.date_ended.strftime('%d %b %Y')}\n"
                 f"Rollover Days: {time_diff.days}")
 
-        field_dict_list.append({
+        responder.field_dict_list.append({
             'name': player_strike.strike_name,
             'value': (
                 f"{active_string}"
                 f"Player Strike ID: {player_strike.id}\n"
                 f"Description: {player_strike.strike_description}\n"
-                f"Strike Weight: {player_strike.strike_weight}\n"
+                f"Strike Weight: **{player_strike.strike_weight}**\n"
                 f"Create Date: "
                 f"{player_strike.date_created.strftime('%d %b %Y')}\n"
                 f"{ending_string}"),
             'inline': False})
 
-    return ResponderModel(
-        title=title, description=description,
-        field_dict_list=field_dict_list)
+    return responder
 
 
 def get_player_strike_all(
@@ -218,15 +264,16 @@ def get_player_strike_all(
         returns ResponderModel
     """
 
+    responder = ResponderModel()
+
     # set title
-    title = f"{player.name} {player.tag} Player Strikes"
+    responder.title = f"{player.name} {player.tag} Player Strikes"
 
     strike_weight_sum = sum(
         player_strike.strike_weight for player_strike in player_strike_list)
 
     active_strike_count = 0
     active_strike_weight = 0
-    field_dict_list = []
 
     for player_strike in player_strike_list:
 
@@ -278,29 +325,35 @@ def get_player_strike_all(
                 f"{player_strike.date_ended.strftime('%d %b %Y')}\n"
                 f"Rollover Days: {time_diff.days}")
 
-        field_dict_list.append({
+        responder.field_dict_list.append({
             'name': player_strike.strike_name,
             'value': (
                 f"{active_string}"
                 f"Player Strike ID: {player_strike.id}\n"
                 f"Description: {player_strike.strike_description}\n"
-                f"Strike Weight: {player_strike.strike_weight}\n"
+                f"Strike Weight: **{player_strike.strike_weight}**\n"
                 f"Create Date: "
                 f"{player_strike.date_created.strftime('%d %b %Y')}\n"
                 f"{ending_string}"),
             'inline': False})
 
     # set description
-    description = (
+    responder.description = (
         f"Linked User: {user_string}\n"
-        f"Active Player Strike Count: {active_strike_count}\n"
-        f"Active Player Strike Weight: {active_strike_weight}\n"
-        f"Player Strike Count: {len(player_strike_list)}\n"
-        f"Player Strike Weight: {strike_weight_sum}")
+        f"Active Player Strike Count: **{active_strike_count}**\n"
+        f"Active Player Strike Weight: **{active_strike_weight}**\n"
+        f"Player Strike Count: **{len(player_strike_list)}**\n"
+        f"Player Strike Weight: **{strike_weight_sum}**")
 
-    return ResponderModel(
-        title=title, description=description,
-        field_dict_list=field_dict_list)
+    if active_strike_weight >= 5:
+        responder.content = (
+            f"**"
+            f"{user_string}: {player.name} has accumulated a "
+            f"Strike Weight of {strike_weight_sum}, "
+            f"contact leadership to resolve strikes"
+            f"**")
+
+    return responder
 
 
 # create
@@ -335,12 +388,17 @@ def add_player_strike(
             title=f"{player.name} {player.tag} Active Player Strikes",
             description=(
                 f"Linked User: {user_string}\n"
-                f"Active Player Strike Count: 0"))
+                f"Active Player Strike Count: **0**"))
 
-    return get_player_strike_active(
+    responder = get_player_strike_overview(
         player=player,
         user_string=user_string,
         player_strike_list=player_strike_list)
+
+    if responder.content is None:
+        responder.content = f"{user_string}"
+
+    return responder
 
 
 # edit
@@ -366,10 +424,49 @@ def edit_player_strike_toggle_persistent(
                 f"Player Strike with given player tag and "
                 f"Player Strike ID not found"))
 
-    return get_player_strike(
+    responder = get_player_strike(
         player=player,
         user_string=user_string,
         player_strike=player_strike)
+
+    if responder.content is None:
+        responder.content = f"{user_string}"
+
+    return responder
+
+
+def edit_player_strike_rollover_days(
+        player: Player,
+        strike_id: int,
+        user_string: str,
+        rollover_days: int):
+    """
+        returns ResponderModel
+    """
+
+    try:
+        player_strike: PlayerStrike = (
+            update_player_strike_rollover_days(
+                player_tag=player.tag,
+                strike_id=strike_id,
+                rollover_days=rollover_days))
+
+    except NotFoundError as arg:
+        return ResponderModel(
+            title=f"{player.name} {player.tag} Player Strike",
+            description=(
+                f"Player Strike with given player tag and "
+                f"Player Strike ID not found"))
+
+    responder = get_player_strike(
+        player=player,
+        user_string=user_string,
+        player_strike=player_strike)
+
+    if responder.content is None:
+        responder.content = f"{user_string}"
+
+    return responder
 
 
 # remove
@@ -404,10 +501,15 @@ def remove_player_strike(
                 f"or Removal Reason with name {removal_reason_name} "
                 f"not found"))
 
-    return get_player_strike(
+    responder = get_player_strike(
         player=player,
         user_string=user_string,
         player_strike=player_strike)
+
+    if responder.content is None:
+        responder.content = f"{user_string}"
+
+    return responder
 
 
 def delete_player_strike_from_id(strike_id: int):

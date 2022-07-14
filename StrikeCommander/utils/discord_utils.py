@@ -271,9 +271,9 @@ command_param_dict = {
     'playerstrike_show': commands.Param(
         name="option",
         description="*optional* options for Player Strike show returns",
-        default="active",
+        default="overview",
         choices=[
-            "active", "all"
+            "overview", "active", "all"
         ]
     ),
     'playerstrike_war': commands.Param(
@@ -295,31 +295,33 @@ command_param_dict = {
     'playerstrike_edit': commands.Param(
         name="option",
         description="*optional* options for Player Strike edit returns",
-        default="toggle persistent",
         choices=[
-            "toggle persistent"
+            "toggle persistent", "rollover days"
         ]
     ),
     'userstrike_show': commands.Param(
         name="option",
         description="*optional* options for User Strike show returns",
-        default="active",
+        default="overview",
         choices=[
-            "active", "all"
+            "overview", "active", "all"
         ]
     ),
     'userstrike_edit': commands.Param(
         name="option",
         description="*optional* options for User Strike edit returns",
-        default="toggle persistent",
         choices=[
-            "toggle persistent"
+            "toggle persistent", "rollover days"
         ]
     ),
     'rollover_days': commands.Param(
         name="rollover_days",
         description="*optional* strike rollover days",
         default=None
+    ),
+    'required_rollover_days': commands.Param(
+        name="rollover_days",
+        description="strike rollover days"
     ),
     'persistent': commands.Param(
         name="persistent",

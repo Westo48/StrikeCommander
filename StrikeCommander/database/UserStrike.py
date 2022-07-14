@@ -477,7 +477,7 @@ def select_user_strike_from_id(strike_id: int):
 
 def update_user_strike_toggle_persistent(user_id: int, strike_id: int):
     """
-        toggles the `persistent` value for the specified User Strike
+        edits the `date ended` value for the specified User Strike
 
         Args:
             `user_id` (int): discord user id of the user
@@ -569,6 +569,123 @@ def update_user_strike_toggle_persistent_from_id(strike_id: int):
     query = (
         f"UPDATE UserStrike SET persistent "
         f"= {not bool(user_strike.persistent)} "
+        f"WHERE id = {user_strike.id};")
+
+    # execute update query
+    preset.update(query)
+
+    # select and return strike model
+    try:
+        user_strike = select_user_strike_from_id(
+            strike_id=user_strike.id)
+
+    except NotFoundError as arg:
+        raise NotFoundError(arg)
+
+    return user_strike
+
+
+def update_user_strike_rollover_days(
+        user_id: int, strike_id: int, rollover_days: int):
+    """
+        toggles the `persistent` value for the specified User Strike
+
+        Args:
+            `user_id` (int): discord user id of the user
+            `strike_id` (int): id of the User Strike
+            `rollover_days` (int, optional): amount of rollover days
+
+        Raises:
+            `NotFoundError`: User Strike with given user id and strike id
+                not found
+
+        Returns: `user_strike` (UserStrike): (
+            `id`: int,
+            `user_id`: int,
+            `strike_name`: str,
+            `strike_description`: str,
+            `strike_weight`: str,
+            `persistent`: bool,
+            `date_created`: datetime,
+            `date_ended`: datetime,
+            `removal_reason_name`: str,
+            `removal_reason_description`: str,
+            `striker_user_id`: int
+    """
+
+    rollover_days = abs(int(rollover_days))
+
+    # get user strike
+    try:
+        user_strike = select_user_strike(
+            user_id=user_id,
+            strike_id=strike_id)
+
+    except NotFoundError as arg:
+        raise NotFoundError(arg)
+
+    # set up the query updating the date ended value
+    query = (
+        f"UPDATE UserStrike SET date_ended "
+        f"= date_add(now(), INTERVAL {rollover_days} DAY) "
+        f"WHERE discord_id = {user_id} "
+        f"AND id = {user_strike.id};")
+
+    # execute update query
+    preset.update(query)
+
+    # select and return strike model
+    try:
+        user_strike = select_user_strike(
+            user_id=user_id, strike_id=user_strike.id)
+
+    except NotFoundError as arg:
+        raise NotFoundError(arg)
+
+    return user_strike
+
+
+# only for super user
+def update_user_strike_rollover_days_from_id(strike_id: int, rollover_days: int):
+    """
+        edits the `date ended` value for the specified User Strike
+
+        Args:
+            `strike_id` (int): id of the User Strike
+            `rollover_days` (int, optional): amount of rollover days
+
+        Raises:
+            `NotFoundError`: User Strike with given strike id
+                not found
+
+        Returns: `user_strike` (UserStrike): (
+            `id`: int,
+            `user_id`: int,
+            `strike_name`: str,
+            `strike_description`: str,
+            `strike_weight`: str,
+            `persistent`: bool,
+            `date_created`: datetime,
+            `date_ended`: datetime,
+            `removal_reason_name`: str,
+            `removal_reason_description`: str,
+            `striker_user_id`: int
+    """
+
+    rollover_days = abs(int(rollover_days))
+
+    # get user strike
+    try:
+        user_strike = select_user_strike_from_id(
+            strike_id=strike_id)
+
+    except NotFoundError as arg:
+        raise NotFoundError(arg)
+
+    # set up the query updating the date ended value
+    query = (
+        f"UPDATE UserStrike SET date_ended "
+        f"= date_add(now(), INTERVAL {rollover_days} DAY) "
         f"WHERE id = {user_strike.id};")
 
     # execute update query

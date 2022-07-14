@@ -5,6 +5,8 @@ from cogs import (
     events as events_cog,
     help as help_cog,
     superuser as super_user_cog,
+    ModelsCog as models_cog,
+    UserCog as user_cog,
     PlayerStrikeCog as player_strike_cog,
     UserStrikeCog as user_strike_cog
 )
@@ -35,6 +37,10 @@ bot.add_cog(help_cog.Help(
 bot.add_cog(events_cog.Events(
     bot, coc_client, client_data))
 bot.add_cog(super_user_cog.SuperUser(
+    bot, coc_client, client_data))
+bot.add_cog(models_cog.Models(
+    bot, coc_client, client_data))
+bot.add_cog(user_cog.User(
     bot, coc_client, client_data))
 bot.add_cog(player_strike_cog.PlayerStrike(
     bot, coc_client, client_data))

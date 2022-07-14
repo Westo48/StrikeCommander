@@ -616,6 +616,131 @@ def update_player_strike_toggle_persistent_from_id(strike_id: int):
     return player_strike
 
 
+def update_player_strike_rollover_days(
+        player_tag: str, strike_id: int, rollover_days: int):
+    """
+        edits the `date ended` value for the specified Player Strike
+
+        Args
+        ----------
+        `player_tag` (str): clash of clans player tag
+        `strike_id` (int): id of the Player Strike
+        `rollover_days` (int, optional): amount of rollover days
+
+        Raises
+        ----------
+        `NotFoundError`: Player Strike with given player tag and strike id
+            not found
+
+        Returns:
+        ----------
+        `player_strike` (PlayerStrike): (
+            `id`: int,
+            `player_tag`: str,
+            `strike_name`: str,
+            `strike_description`: str,
+            `strike_weight`: str,
+            `persistent`: bool,
+            `date_created`: datetime,
+            `date_ended`: datetime,
+            `removal_reason_name`: str,
+            `removal_reason_description`: str,
+            `striker_user_id`: int
+    """
+
+    rollover_days = abs(int(rollover_days))
+
+    # get player strike
+    try:
+        player_strike = select_player_strike(
+            player_tag=player_tag,
+            strike_id=strike_id)
+
+    except NotFoundError as arg:
+        raise NotFoundError(arg)
+
+    # set up the query updating the date ended value
+    query = (
+        f"UPDATE PlayerStrike SET date_ended = "
+        f"date_add(now(), INTERVAL {rollover_days} DAY) "
+        f"WHERE player_tag = '{player_tag}' "
+        f"AND id = {player_strike.id};")
+
+    # execute update query
+    preset.update(query)
+
+    # select and return strike model
+    try:
+        player_strike = select_player_strike(
+            player_tag=player_tag, strike_id=player_strike.id)
+
+    except NotFoundError as arg:
+        raise NotFoundError(arg)
+
+    return player_strike
+
+
+# only for super user
+def update_player_strike_rollover_days_from_id(strike_id: int, rollover_days: int):
+    """
+        edits the `date ended` value for the specified Player Strike
+
+        Args
+        ----------
+        `strike_id` (int): id of the Player Strike
+        `rollover_days` (int, optional): amount of rollover days
+
+        Raises
+        ----------
+        `NotFoundError`: Player Strike with given strike id
+            not found
+
+        Returns
+        ----------
+        `player_strike` (PlayerStrike): (
+            `id`: int,
+            `player_tag`: str,
+            `strike_name`: str,
+            `strike_description`: str,
+            `strike_weight`: str,
+            `persistent`: bool,
+            `date_created`: datetime,
+            `date_ended`: datetime,
+            `removal_reason_name`: str,
+            `removal_reason_description`: str,
+            `striker_user_id`: int
+    """
+
+    rollover_days = abs(int(rollover_days))
+
+    # get player strike
+    try:
+        player_strike = select_player_strike_from_id(
+            strike_id=strike_id)
+
+    except NotFoundError as arg:
+        raise NotFoundError(arg)
+
+    # set up the query updating the ended date value
+    query = (
+        f"UPDATE PlayerStrike SET date_ended = "
+        f"date_add(now(), INTERVAL {rollover_days} DAY) "
+        f"WHERE id = {player_strike.id};")
+
+    # execute update query
+    preset.update(query)
+
+    # select and return strike model
+    try:
+        player_strike = select_player_strike_from_id(
+            strike_id=player_strike.id)
+
+    except NotFoundError as arg:
+        raise NotFoundError(arg)
+
+    return player_strike
+
+
 def update_player_strike_add_removal_reason(
     player_tag: str, strike_id: int, removal_reason_name: str
 ):

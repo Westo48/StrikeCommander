@@ -17,6 +17,7 @@ from responders.ClashResponder import (
 from responders.PlayerStrikeResponder import (
     find_player_strike_active,
     find_player_strike_all,
+    get_player_strike_overview,
     get_player_strike_active,
     get_player_strike_all)
 from errors.errors_db import(
@@ -28,6 +29,7 @@ from database.UserStrike import (
     select_user_strike_list_all,
     insert_user_strike,
     update_user_strike_toggle_persistent,
+    update_user_strike_rollover_days,
     update_user_strike_add_removal_reason,
     delete_user_strike)
 
@@ -36,7 +38,7 @@ from database.UserStrike import (
 
 def find_user_strike(user_id: int, strike_id: int):
     """
-        returns User Strike list
+        returns User Strike
     """
 
     try:
@@ -86,10 +88,12 @@ def get_user_summary_active(
         player_strike_list: list[PlayerStrike],
         player_count: int):
     """
-        returns Response Model
+        returns ResponderModel
     """
 
-    title = f"Active Strikes"
+    responder = ResponderModel()
+
+    responder.title = f"Active Strikes"
 
     strike_list = []
     strike_list.extend(user_strike_list)
@@ -104,15 +108,20 @@ def get_user_summary_active(
 
     strike_count = len(strike_list)
 
-    description = (
+    responder.description = (
         f"User: {user.mention}\n"
         f"Player Count: {player_count}\n"
-        f"Active Strike Count: {strike_count}\n"
-        f"Active Strike Weight: {strike_weight_sum}")
+        f"Active Strike Count: **{strike_count}**\n"
+        f"Active Strike Weight: **{strike_weight_sum}**")
 
-    return ResponderModel(
-        title=title,
-        description=description)
+    if strike_weight_sum >= 5:
+        responder.content = (
+            f"**"
+            f"{user.mention} has accumulated a Strike Weight of "
+            f"{strike_weight_sum}, contact leadership to resolve strikes"
+            f"**")
+
+    return responder
 
 
 def get_user_summary_all(
@@ -121,10 +130,12 @@ def get_user_summary_all(
         player_strike_list: list[PlayerStrike],
         player_count: int):
     """
-        returns Response Model
+        returns ResponderModel
     """
 
-    title = f"Strikes"
+    responder = ResponderModel()
+
+    responder.title = f"Strikes"
 
     strike_list = []
     strike_list.extend(user_strike_list)
@@ -177,25 +188,30 @@ def get_user_summary_all(
 
             continue
 
-    description = (
+    responder.description = (
         f"User: {user.mention}\n"
         f"Player Count: {player_count}\n"
-        f"Active Strike Count: {active_strike_count}\n"
-        f"Active Strike Weight: {active_strike_weight}\n"
-        f"Strike Count: {strike_count}\n"
-        f"Strike Weight: {strike_weight_sum}")
+        f"Active Strike Count: **{active_strike_count}**\n"
+        f"Active Strike Weight: **{active_strike_weight}**\n"
+        f"Strike Count: **{strike_count}**\n"
+        f"Strike Weight: **{strike_weight_sum}**")
 
-    return ResponderModel(
-        title=title,
-        description=description)
+    if active_strike_weight >= 5:
+        responder.content = (
+            f"**"
+            f"{user.mention} has accumulated a Strike Weight of "
+            f"{active_strike_weight}, contact leadership to resolve strikes"
+            f"**")
+
+    return responder
 
 
-async def get_user_strike_message_active(
+async def get_user_strike_message_overview(
         user: User,
         inter: ApplicationCommandInteraction,
         coc_client):
     """
-        returns `embed list`
+        returns ResponderModel
     """
 
     embed_list = []
@@ -206,7 +222,7 @@ async def get_user_strike_message_active(
         user_strike_list = (find_user_strike_active(
             user_id=user.id))
 
-        response = get_user_strike_active(
+        response = get_user_strike_overview(
             user_string=user.mention,
             user_strike_list=user_strike_list)
 
@@ -223,7 +239,7 @@ async def get_user_strike_message_active(
             title=f"Active User Strikes",
             description=(
                 f"User: {user.mention}\n"
-                f"Active User Strike Count: 0"))
+                f"Active User Strike Count: **0**"))
 
         embed_list.extend(embed_message(
             icon_url=inter.bot.user.avatar.url,
@@ -264,7 +280,137 @@ async def get_user_strike_message_active(
                 title=f"{player.name} {player.tag} Active Player Strikes",
                 description=(
                     f"Linked User: {user.mention}\n"
-                    f"Active Player Strike Count: 0"))
+                    f"Active Player Strike Count: **0**"))
+
+            embed_list.extend(embed_message(
+                icon_url=inter.bot.user.avatar.url,
+                title=response.title,
+                description=response.description,
+                bot_user_name=inter.me.display_name,
+                thumbnail=embed_thumbnail,
+                field_list=response.field_dict_list,
+                author=inter.author))
+
+            continue
+
+        response = get_player_strike_overview(
+            player=player,
+            user_string=user.mention,
+            player_strike_list=player_strike_list)
+
+        embed_list.extend(embed_message(
+            icon_url=inter.bot.user.avatar.url,
+            title=response.title,
+            description=response.description,
+            bot_user_name=inter.me.display_name,
+            thumbnail=embed_thumbnail,
+            field_list=response.field_dict_list,
+            author=inter.author))
+
+        total_player_strike_list.extend(
+            player_strike_list)
+
+    response = get_user_summary_active(
+        user=user,
+        user_strike_list=user_strike_list,
+        player_strike_list=total_player_strike_list,
+        player_count=len(db_player_list))
+
+    user_summary_embed = embed_message(
+        icon_url=inter.bot.user.avatar.url,
+        title=response.title,
+        description=response.description,
+        bot_user_name=inter.me.display_name,
+        field_list=response.field_dict_list,
+        author=inter.author)
+
+    return_embed_list = []
+
+    return_embed_list.extend(user_summary_embed)
+    return_embed_list.extend(embed_list)
+
+    return_response = ResponderModel(
+        content=response.content,
+        embed_list=return_embed_list)
+
+    return return_response
+
+
+async def get_user_strike_message_active(
+        user: User,
+        inter: ApplicationCommandInteraction,
+        coc_client):
+    """
+        returns ResponderModel
+    """
+
+    embed_list = []
+    user_strike_list = []
+    total_player_strike_list: list[PlayerStrike] = []
+
+    try:
+        user_strike_list = (find_user_strike_active(
+            user_id=user.id))
+
+        response = get_user_strike_active(
+            user_string=user.mention,
+            user_strike_list=user_strike_list)
+
+        embed_list.extend(embed_message(
+            icon_url=inter.bot.user.avatar.url,
+            title=response.title,
+            description=response.description,
+            bot_user_name=inter.me.display_name,
+            field_list=response.field_dict_list,
+            author=inter.author))
+
+    except NotFoundError as arg:
+        response = ResponderModel(
+            title=f"Active User Strikes",
+            description=(
+                f"User: {user.mention}\n"
+                f"Active User Strike Count: **0**"))
+
+        embed_list.extend(embed_message(
+            icon_url=inter.bot.user.avatar.url,
+            title=response.title,
+            description=response.description,
+            bot_user_name=inter.me.display_name,
+            field_list=response.field_dict_list,
+            author=inter.author))
+
+    db_player_list = read_player_list(
+        discord_user_id=user.id)
+
+    for db_player in db_player_list:
+        player: Player = await get_player(
+            db_player.player_tag, coc_client)
+
+        if player is None:
+            embed_description = (
+                f"could not find player with tag "
+                f"{db_player.player_tag}")
+
+            embed_list.extend(embed_message(
+                icon_url=inter.bot.user.avatar.url,
+                bot_user_name=inter.me.display_name,
+                description=embed_description,
+                author=inter.author))
+
+            continue
+
+        embed_thumbnail = get_town_hall_url(player)
+
+        try:
+            player_strike_list = (find_player_strike_active(
+                player_tag=player.tag))
+
+        except NotFoundError as arg:
+            response = ResponderModel(
+                title=f"{player.name} {player.tag} Active Player Strikes",
+                description=(
+                    f"Linked User: {user.mention}\n"
+                    f"Active Player Strike Count: **0**"))
 
             embed_list.extend(embed_message(
                 icon_url=inter.bot.user.avatar.url,
@@ -313,7 +459,11 @@ async def get_user_strike_message_active(
     return_embed_list.extend(user_summary_embed)
     return_embed_list.extend(embed_list)
 
-    return return_embed_list
+    return_response = ResponderModel(
+        content=response.content,
+        embed_list=return_embed_list)
+
+    return return_response
 
 
 async def get_user_strike_message_all(
@@ -321,7 +471,7 @@ async def get_user_strike_message_all(
         inter: ApplicationCommandInteraction,
         coc_client):
     """
-        returns `embed list`
+        returns ResponderModel
     """
 
     embed_list = []
@@ -349,7 +499,7 @@ async def get_user_strike_message_all(
             title=f"Active User Strikes",
             description=(
                 f"User: {user.mention}\n"
-                f"Active User Strike Count: 0"))
+                f"Active User Strike Count: **0**"))
 
         embed_list.extend(embed_message(
             icon_url=inter.bot.user.avatar.url,
@@ -390,7 +540,7 @@ async def get_user_strike_message_all(
                 title=f"{player.name} {player.tag} Active Player Strikes",
                 description=(
                     f"Linked User: {user.mention}\n"
-                    f"Active Player Strike Count: 0"))
+                    f"Active Player Strike Count: **0**"))
 
             embed_list.extend(embed_message(
                 icon_url=inter.bot.user.avatar.url,
@@ -439,7 +589,11 @@ async def get_user_strike_message_all(
     return_embed_list.extend(user_summary_embed)
     return_embed_list.extend(embed_list)
 
-    return return_embed_list
+    return_response = ResponderModel(
+        content=response.content,
+        embed_list=return_embed_list)
+
+    return return_response
 
 
 def get_user_strike(
@@ -497,7 +651,7 @@ def get_user_strike(
             f"{active_string}"
             f"User Strike ID: {user_strike.id}\n"
             f"Description: {user_strike.strike_description}\n"
-            f"Strike Weight: {user_strike.strike_weight}\n"
+            f"Strike Weight: **{user_strike.strike_weight}**\n"
             f"Create Date: "
             f"{user_strike.date_created.strftime('%d %b %Y')}\n"
             f"{ending_string}"),
@@ -508,6 +662,37 @@ def get_user_strike(
         field_dict_list=field_dict_list)
 
 
+def get_user_strike_overview(
+        user_string: str,
+        user_strike_list: list[UserStrike]):
+    """
+        returns ResponderModel
+    """
+
+    responder = ResponderModel()
+
+    # set title
+    responder.title = f"Active User Strikes"
+
+    strike_weight_sum = sum(
+        user_strike.strike_weight for user_strike in user_strike_list)
+
+    # set description
+    responder.description = (
+        f"User: {user_string}\n"
+        f"Active User Strike Count: **{len(user_strike_list)}**\n"
+        f"Active User Strike Weight: **{strike_weight_sum}**")
+
+    if strike_weight_sum >= 5:
+        responder.content = (
+            f"**"
+            f"{user_string} has accumulated a Strike Weight of "
+            f"{strike_weight_sum}, contact leadership to resolve strikes"
+            f"**")
+
+    return responder
+
+
 def get_user_strike_active(
         user_string: str,
         user_strike_list: list[UserStrike]):
@@ -515,19 +700,26 @@ def get_user_strike_active(
         returns ResponderModel
     """
 
+    responder = ResponderModel()
+
     # set title
-    title = f"Active User Strikes"
+    responder.title = f"Active User Strikes"
 
     strike_weight_sum = sum(
         user_strike.strike_weight for user_strike in user_strike_list)
 
     # set description
-    description = (
+    responder.description = (
         f"User: {user_string}\n"
-        f"Active User Strike Count: {len(user_strike_list)}\n"
-        f"Active User Strike Weight: {strike_weight_sum}")
+        f"Active User Strike Count: **{len(user_strike_list)}**\n"
+        f"Active User Strike Weight: **{strike_weight_sum}**")
 
-    field_dict_list = []
+    if strike_weight_sum >= 5:
+        responder.content = (
+            f"**"
+            f"{user_string} has accumulated a Strike Weight of "
+            f"{strike_weight_sum}, contact leadership to resolve strikes"
+            f"**")
 
     for user_strike in user_strike_list:
 
@@ -566,21 +758,19 @@ def get_user_strike_active(
                 f"{user_strike.date_ended.strftime('%d %b %Y')}\n"
                 f"Rollover Days: {time_diff.days}")
 
-        field_dict_list.append({
+        responder.field_dict_list.append({
             'name': user_strike.strike_name,
             'value': (
                 f"{active_string}"
                 f"User Strike ID: {user_strike.id}\n"
                 f"Description: {user_strike.strike_description}\n"
-                f"Strike Weight: {user_strike.strike_weight}\n"
+                f"Strike Weight: **{user_strike.strike_weight}**\n"
                 f"Create Date: "
                 f"{user_strike.date_created.strftime('%d %b %Y')}\n"
                 f"{ending_string}"),
             'inline': False})
 
-    return ResponderModel(
-        title=title, description=description,
-        field_dict_list=field_dict_list)
+    return responder
 
 
 def get_user_strike_all(
@@ -590,21 +780,22 @@ def get_user_strike_all(
         returns ResponderModel
     """
 
+    responder = ResponderModel()
+
     # set title
-    title = f"User Strikes"
+    responder.title = f"User Strikes"
 
     strike_weight_sum = sum(
         user_strike.strike_weight for user_strike in user_strike_list)
 
     # set description
-    description = (
+    responder.description = (
         f"User: {user_string}\n"
-        f"User Strike Count: {len(user_strike_list)}\n"
-        f"User Strike Weight: {strike_weight_sum}\n")
+        f"User Strike Count: **{len(user_strike_list)}**\n"
+        f"User Strike Weight: **{strike_weight_sum}**\n")
 
     active_strike_count = 0
     active_strike_weight = 0
-    field_dict_list = []
 
     for user_strike in user_strike_list:
 
@@ -656,25 +847,30 @@ def get_user_strike_all(
                 f"{user_strike.date_ended.strftime('%d %b %Y')}\n"
                 f"Rollover Days: {time_diff.days}")
 
-        field_dict_list.append({
+        responder.field_dict_list.append({
             'name': user_strike.strike_name,
             'value': (
                 f"{active_string}"
                 f"User Strike ID: {user_strike.id}\n"
                 f"Description: {user_strike.strike_description}\n"
-                f"Strike Weight: {user_strike.strike_weight}\n"
+                f"Strike Weight: **{user_strike.strike_weight}**\n"
                 f"Create Date: "
                 f"{user_strike.date_created.strftime('%d %b %Y')}\n"
                 f"{ending_string}"),
             'inline': False})
 
-    description += (
-        f"Active User Strike Count: {active_strike_count}\n"
-        f"Active User Strike Weight: {active_strike_weight}")
+    responder.description += (
+        f"Active User Strike Count: **{active_strike_count}**\n"
+        f"Active User Strike Weight: **{active_strike_weight}**")
 
-    return ResponderModel(
-        title=title, description=description,
-        field_dict_list=field_dict_list)
+    if active_strike_weight >= 5:
+        responder.content = (
+            f"**"
+            f"{user_string} has accumulated a Strike Weight of "
+            f"{active_strike_weight}, contact leadership to resolve strikes"
+            f"**")
+
+    return responder
 
 
 # create
@@ -708,11 +904,17 @@ def add_user_strike(
             title=f"Active User Strikes",
             description=(
                 f"User: {user.mention}"
-                f"Active User Strike Count: 0"))
+                f"Active User Strike Count: **0**"))
 
-    return get_user_strike_active(
+    responder = get_user_strike_overview(
         user_string=user.mention,
         user_strike_list=user_strike_list)
+
+    # user ping has not been created
+    if responder.content is None:
+        responder.content = f"{user.mention}"
+
+    return responder
 
 
 # edit
@@ -738,9 +940,49 @@ def edit_user_strike_toggle_persistent(
                 f"User Strike with given user and "
                 f"User Strike ID not found"))
 
-    return get_user_strike(
+    responder = get_user_strike(
         user_string=user.mention,
         user_strike=user_strike)
+
+    # user ping has not been created
+    if responder.content is None:
+        responder.content = f"{user.mention}"
+
+    return responder
+
+
+def edit_user_strike_rollover_days(
+        user: User,
+        strike_id: int,
+        rollover_days: int):
+    """
+        returns ResponderModel
+    """
+
+    try:
+        user_strike: UserStrike = (
+            update_user_strike_rollover_days(
+                user_id=user.id,
+                strike_id=strike_id,
+                rollover_days=rollover_days))
+
+    except NotFoundError as arg:
+        return ResponderModel(
+            title=f"User Strike",
+            description=(
+                f"User: {user.mention}"
+                f"User Strike with given user and "
+                f"User Strike ID not found"))
+
+    responder = get_user_strike(
+        user_string=user.mention,
+        user_strike=user_strike)
+
+    # user ping has not been created
+    if responder.content is None:
+        responder.content = f"{user.mention}"
+
+    return responder
 
 
 # remove
@@ -774,9 +1016,15 @@ def remove_user_strike(
                 f"or Removal Reason with name {removal_reason_name} "
                 f"not found"))
 
-    return get_user_strike(
+    responder = get_user_strike(
         user_string=user.mention,
         user_strike=user_strike)
+
+    # user ping has not been created
+    if responder.content is None:
+        responder.content = f"{user.mention}"
+
+    return responder
 
 
 def delete_user_strike_from_id(strike_id: int):

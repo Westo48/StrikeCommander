@@ -75,7 +75,101 @@ class HelpSuperUserBtn(disnake.ui.Button):
         await inter.edit_original_message(embeds=embed_list, view=view)
 
 
-class HelpUserStrikedBtn(disnake.ui.Button):
+class HelpModelsBtn(disnake.ui.Button):
+    def __init__(
+            self, bot: Bot, client_data: ClientData.StrikeCommander_Data):
+        super().__init__(
+            label="Models", style=disnake.ButtonStyle.primary)
+        self.bot = bot
+        self.client_data = client_data
+
+    async def callback(
+        self,
+        inter: disnake.MessageInteraction
+    ):
+        await inter.response.defer()
+
+        field_dict_list = []
+
+        # get the proper message
+        for category in self.client_data.bot_categories:
+            # category name matches button label
+            if category.name == self.label:
+                field_dict_list.extend(help_responder.help_category_list(
+                    inter=inter, all_commands=self.bot.all_slash_commands,
+                    bot_category=category))
+
+                break
+
+        if len(field_dict_list) == 0:
+            field_dict_list.append({
+                'name': f"{self.label} category not found",
+                'value': f"please let {self.client_data.author} know"
+            })
+
+        view = HelpMainView(
+            buttons=[HelpMainBtn(bot=self.bot, client_data=self.client_data)])
+
+        embed_list = discord_responder.embed_message(
+            icon_url=self.bot.user.avatar.url,
+            title=f"{inter.me.display_name} {self.label} help menu",
+            bot_user_name=inter.me.display_name,
+            field_list=field_dict_list,
+            author=inter.author
+        )
+
+        # edit the original message with the updated embeds
+        await inter.edit_original_message(embeds=embed_list, view=view)
+
+
+class HelpUserBtn(disnake.ui.Button):
+    def __init__(
+            self, bot: Bot, client_data: ClientData.StrikeCommander_Data):
+        super().__init__(
+            label="User", style=disnake.ButtonStyle.primary)
+        self.bot = bot
+        self.client_data = client_data
+
+    async def callback(
+        self,
+        inter: disnake.MessageInteraction
+    ):
+        await inter.response.defer()
+
+        field_dict_list = []
+
+        # get the proper message
+        for category in self.client_data.bot_categories:
+            # category name matches button label
+            if category.name == self.label:
+                field_dict_list.extend(help_responder.help_category_list(
+                    inter=inter, all_commands=self.bot.all_slash_commands,
+                    bot_category=category))
+
+                break
+
+        if len(field_dict_list) == 0:
+            field_dict_list.append({
+                'name': f"{self.label} category not found",
+                'value': f"please let {self.client_data.author} know"
+            })
+
+        view = HelpMainView(
+            buttons=[HelpMainBtn(bot=self.bot, client_data=self.client_data)])
+
+        embed_list = discord_responder.embed_message(
+            icon_url=self.bot.user.avatar.url,
+            title=f"{inter.me.display_name} {self.label} help menu",
+            bot_user_name=inter.me.display_name,
+            field_list=field_dict_list,
+            author=inter.author
+        )
+
+        # edit the original message with the updated embeds
+        await inter.edit_original_message(embeds=embed_list, view=view)
+
+
+class HelpUserStrikeBtn(disnake.ui.Button):
     def __init__(
             self, bot: Bot, client_data: ClientData.StrikeCommander_Data):
         super().__init__(

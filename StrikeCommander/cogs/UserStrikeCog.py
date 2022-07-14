@@ -44,7 +44,6 @@ class UserStrike(commands.Cog):
     ):
         """
             user strike show command
-
             Parameters
             ----------
             option (optional): options for user strike show command
@@ -82,18 +81,22 @@ class UserStrike(commands.Cog):
             await discord_responder.send_embed_list(inter, embed_list)
             return
 
-        # Summary player count, total Active strike count, total active strike weight
-        # User Strike active user strike count, active user strike weight
-        # Player Strike active player strike count, active player strike weight
-        if option == "active":
-            embed_list = (
+        if option == "overview":
+            response = (
+                await user_strike_responder.get_user_strike_message_overview(
+                    user=user,
+                    inter=inter,
+                    coc_client=self.coc_client))
+
+        elif option == "active":
+            response = (
                 await user_strike_responder.get_user_strike_message_active(
                     user=user,
                     inter=inter,
                     coc_client=self.coc_client))
 
         elif option == "all":
-            embed_list = (
+            response = (
                 await user_strike_responder.get_user_strike_message_all(
                     user=user,
                     inter=inter,
@@ -106,15 +109,18 @@ class UserStrike(commands.Cog):
                     'value': "please select a different option"
                 }])
 
-            embed_list = discord_responder.embed_message(
+            response.embed_list.append(discord_responder.embed_message(
                 icon_url=inter.bot.user.avatar.url,
                 title=response.title,
                 description=response.description,
                 bot_user_name=inter.me.display_name,
                 field_list=response.field_dict_list,
-                author=inter.author)
+                author=inter.author))
 
-        await discord_responder.send_embed_list(inter, embed_list)
+        await discord_responder.send_embed_list(
+            inter,
+            response.embed_list,
+            content=response.content)
 
     @userstrike.sub_command()
     async def add(
@@ -125,13 +131,12 @@ class UserStrike(commands.Cog):
             name=discord_utils.command_param_dict['required_strike_model_name'].name,
             description=discord_utils.command_param_dict['required_strike_model_name'].description,
             default=discord_utils.command_param_dict['required_strike_model_name'].default,
-            autocomplete=discord_utils.autocomp_strike_model_name_all),
+            autocomplete=discord_utils.autocomp_strike_model_name_active),
         rollover_days: int = discord_utils.command_param_dict['rollover_days'],
         persistent: bool = discord_utils.command_param_dict['persistent']
     ):
         """
             user strike add command
-
             Parameters
             ----------
             `user` (User): user to add User Strike
@@ -154,28 +159,47 @@ class UserStrike(commands.Cog):
             field_list=response.field_dict_list,
             author=inter.author)
 
-        await discord_responder.send_embed_list(inter, embed_list)
+        await discord_responder.send_embed_list(
+            inter,
+            embed_list,
+            content=response.content)
 
     @userstrike.sub_command()
     async def edit(
         self,
         inter: ApplicationCommandInteraction,
+        option: str = discord_utils.command_param_dict['userstrike_edit'],
         user: disnake.User = discord_utils.command_param_dict['required_user'],
-        user_strike_id: int = discord_utils.command_param_dict['user_strike_id']
+        user_strike_id: int = discord_utils.command_param_dict['user_strike_id'],
+        rollover_days: int = discord_utils.command_param_dict['required_rollover_days']
     ):
         """
             user strike edit command
-
             Parameters
             ----------
             `user` (User): user to edit User Strike
             `user_strike_id` (int): ID of the User Strike to edit
+            `rollover_days` (int): amount of rollover days
         """
 
-        response = (
-            user_strike_responder.edit_user_strike_toggle_persistent(
-                user=user,
-                strike_id=user_strike_id))
+        if option == "toggle persistent":
+            response = (
+                user_strike_responder.edit_user_strike_toggle_persistent(
+                    user=user,
+                    strike_id=user_strike_id))
+
+        elif option == "rollover days":
+            response = (
+                user_strike_responder.edit_user_strike_rollover_days(
+                    user=user,
+                    strike_id=user_strike_id,
+                    rollover_days=rollover_days))
+
+        else:
+            response = ResponderModel(field_dict_list=[{
+                'name': "incorrect option selected",
+                'value': "please select a different option"
+            }])
 
         embed_list = discord_responder.embed_message(
             icon_url=inter.bot.user.avatar.url,
@@ -185,7 +209,10 @@ class UserStrike(commands.Cog):
             field_list=response.field_dict_list,
             author=inter.author)
 
-        await discord_responder.send_embed_list(inter, embed_list)
+        await discord_responder.send_embed_list(
+            inter,
+            embed_list,
+            content=response.content)
 
     @userstrike.sub_command()
     async def remove(
@@ -197,11 +224,10 @@ class UserStrike(commands.Cog):
             name=discord_utils.command_param_dict['required_removal_reason_model_name'].name,
             description=discord_utils.command_param_dict['required_removal_reason_model_name'].description,
             default=discord_utils.command_param_dict['required_removal_reason_model_name'].default,
-            autocomplete=discord_utils.autocomp_strike_model_name_all)
+            autocomplete=discord_utils.autocomp_removal_reason_model_name_active)
     ):
         """
             user strike remove command
-
             Parameters
             ----------
             `user` (User): user to remove User Strike
@@ -221,4 +247,7 @@ class UserStrike(commands.Cog):
             field_list=response.field_dict_list,
             author=inter.author)
 
-        await discord_responder.send_embed_list(inter, embed_list)
+        await discord_responder.send_embed_list(
+            inter,
+            embed_list,
+            content=response.content)
