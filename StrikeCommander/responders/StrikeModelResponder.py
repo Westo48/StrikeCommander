@@ -41,10 +41,10 @@ def get_strike_model_from_name(name: str):
     field_dict_list.append({
         'name': strike_model.name,
         'value': (
-            f"description: {strike_model.description}\n"
-            f"strike weight: {strike_model.strike_weight}\n"
-            f"persistent: {strike_model.persistent}\n"
-            f"rollover days: {strike_model.rollover_days}"
+            f"Description: {strike_model.description}\n"
+            f"Strikes: {strike_model.strike_weight}\n"
+            f"Persistent: {strike_model.persistent}\n"
+            f"Rollover Days: {strike_model.rollover_days}"
         )
     })
 
@@ -80,10 +80,10 @@ def get_strike_model_active():
         field_dict_list.append({
             'name': strike_model.name,
             'value': (
-                f"description: {strike_model.description}\n"
-                f"strike weight: {strike_model.strike_weight}\n"
-                f"persistent: {strike_model.persistent}\n"
-                f"rollover days: {strike_model.rollover_days}"
+                f"Description: {strike_model.description}\n"
+                f"Strikes: {strike_model.strike_weight}\n"
+                f"Persistent: {strike_model.persistent}\n"
+                f"Rollover Days: {strike_model.rollover_days}"
             )
         })
 
@@ -119,11 +119,11 @@ def get_strike_model_all():
         field_dict_list.append({
             'name': strike_model.name,
             'value': (
-                f"active: {strike_model.active}\n"
-                f"description: {strike_model.description}\n"
-                f"strike weight: {strike_model.strike_weight}\n"
-                f"persistent: {strike_model.persistent}\n"
-                f"rollover days: {strike_model.rollover_days}"
+                f"Active: {strike_model.active}\n"
+                f"Description: {strike_model.description}\n"
+                f"Strikes: {strike_model.strike_weight}\n"
+                f"Persistent: {strike_model.persistent}\n"
+                f"Rollover Days: {strike_model.rollover_days}"
             )
         })
 
@@ -164,11 +164,11 @@ def update_strike_model(
 
     # set description
     embed_description = (
-        f"active: {strike_model.active}\n"
-        f"description: {strike_model.description}\n"
-        f"strike weight: {strike_model.strike_weight}\n"
-        f"persistent: {strike_model.persistent}\n"
-        f"rollover days: {strike_model.rollover_days}"
+        f"Active: {strike_model.active}\n"
+        f"Description: {strike_model.description}\n"
+        f"Strikes: {strike_model.strike_weight}\n"
+        f"Persistent: {strike_model.persistent}\n"
+        f"Rollover Days: {strike_model.rollover_days}"
     )
 
     return ResponderModel(
@@ -206,11 +206,11 @@ def update_strike_model_name(
 
     # set description
     embed_description = (
-        f"active: {strike_model.active}\n"
-        f"description: {strike_model.description}\n"
-        f"strike weight: {strike_model.strike_weight}\n"
-        f"persistent: {strike_model.persistent}\n"
-        f"rollover days: {strike_model.rollover_days}"
+        f"Active: {strike_model.active}\n"
+        f"Description: {strike_model.description}\n"
+        f"Strikes: {strike_model.strike_weight}\n"
+        f"Persistent: {strike_model.persistent}\n"
+        f"Rollover Days: {strike_model.rollover_days}"
     )
 
     return ResponderModel(
@@ -238,11 +238,11 @@ def update_strike_model_toggle(name: str):
 
     # set description
     description = (
-        f"active: {strike_model.active}\n"
-        f"description: {strike_model.description}\n"
-        f"strike weight: {strike_model.strike_weight}\n"
-        f"persistent: {strike_model.persistent}\n"
-        f"rollover days: {strike_model.rollover_days}"
+        f"Active: {strike_model.active}\n"
+        f"Description: {strike_model.description}\n"
+        f"Strikes: {strike_model.strike_weight}\n"
+        f"Persistent: {strike_model.persistent}\n"
+        f"Rollover Days: {strike_model.rollover_days}"
     )
 
     return ResponderModel(
@@ -299,11 +299,11 @@ def add_strike_model(
 
     # set description
     description = (
-        f"active: {strike_model.active}\n"
-        f"description: {strike_model.description}\n"
-        f"strike weight: {strike_model.strike_weight}\n"
-        f"persistent: {strike_model.persistent}\n"
-        f"rollover days: {strike_model.rollover_days}"
+        f"Active: {strike_model.active}\n"
+        f"Description: {strike_model.description}\n"
+        f"Strikes: {strike_model.strike_weight}\n"
+        f"Persistent: {strike_model.persistent}\n"
+        f"Rollover Days: {strike_model.rollover_days}"
     )
 
     return ResponderModel(

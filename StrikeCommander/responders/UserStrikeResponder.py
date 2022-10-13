@@ -111,14 +111,14 @@ def get_user_summary_active(
     responder.description = (
         f"User: {user.mention}\n"
         f"Player Count: {player_count}\n"
-        f"Active Strike Count: **{strike_count}**\n"
-        f"Active Strike Weight: **{strike_weight_sum}**")
+        f"Active Violations: **{strike_count}**\n"
+        f"Active Strikes: **{strike_weight_sum}**")
 
-    if strike_weight_sum >= 5:
+    if strike_weight_sum >= 6:
         responder.content = (
             f"**"
-            f"{user.mention} has accumulated a Strike Weight of "
-            f"{strike_weight_sum}, contact leadership to resolve strikes"
+            f"{user.mention} has accumulated {strike_weight_sum} "
+            f"strikes, contact leadership to resolve strikes"
             f"**")
 
     return responder
@@ -191,16 +191,16 @@ def get_user_summary_all(
     responder.description = (
         f"User: {user.mention}\n"
         f"Player Count: {player_count}\n"
-        f"Active Strike Count: **{active_strike_count}**\n"
-        f"Active Strike Weight: **{active_strike_weight}**\n"
-        f"Strike Count: **{strike_count}**\n"
-        f"Strike Weight: **{strike_weight_sum}**")
+        f"Active Violations: **{active_strike_count}**\n"
+        f"Active Strikes: **{active_strike_weight}**\n"
+        f"Violations: **{strike_count}**\n"
+        f"Strikes: **{strike_weight_sum}**")
 
-    if active_strike_weight >= 5:
+    if active_strike_weight >= 6:
         responder.content = (
             f"**"
-            f"{user.mention} has accumulated a Strike Weight of "
-            f"{active_strike_weight}, contact leadership to resolve strikes"
+            f"{user.mention} has accumulated {strike_weight_sum} "
+            f"strikes, contact leadership to resolve strikes"
             f"**")
 
     return responder
@@ -239,7 +239,7 @@ async def get_user_strike_message_overview(
             title=f"Active User Strikes",
             description=(
                 f"User: {user.mention}\n"
-                f"Active User Strike Count: **0**"))
+                f"Active User Violations: **0**"))
 
         embed_list.extend(embed_message(
             icon_url=inter.bot.user.avatar.url,
@@ -280,7 +280,7 @@ async def get_user_strike_message_overview(
                 title=f"{player.name} {player.tag} Active Player Strikes",
                 description=(
                     f"Linked User: {user.mention}\n"
-                    f"Active Player Strike Count: **0**"))
+                    f"Active Player Violations: **0**"))
 
             embed_list.extend(embed_message(
                 icon_url=inter.bot.user.avatar.url,
@@ -369,7 +369,7 @@ async def get_user_strike_message_active(
             title=f"Active User Strikes",
             description=(
                 f"User: {user.mention}\n"
-                f"Active User Strike Count: **0**"))
+                f"Active User Violations: **0**"))
 
         embed_list.extend(embed_message(
             icon_url=inter.bot.user.avatar.url,
@@ -410,7 +410,7 @@ async def get_user_strike_message_active(
                 title=f"{player.name} {player.tag} Active Player Strikes",
                 description=(
                     f"Linked User: {user.mention}\n"
-                    f"Active Player Strike Count: **0**"))
+                    f"Active Player Violations: **0**"))
 
             embed_list.extend(embed_message(
                 icon_url=inter.bot.user.avatar.url,
@@ -499,7 +499,7 @@ async def get_user_strike_message_all(
             title=f"Active User Strikes",
             description=(
                 f"User: {user.mention}\n"
-                f"Active User Strike Count: **0**"))
+                f"Active User Violations: **0**"))
 
         embed_list.extend(embed_message(
             icon_url=inter.bot.user.avatar.url,
@@ -540,7 +540,7 @@ async def get_user_strike_message_all(
                 title=f"{player.name} {player.tag} Active Player Strikes",
                 description=(
                     f"Linked User: {user.mention}\n"
-                    f"Active Player Strike Count: **0**"))
+                    f"Active Player Violations: **0**"))
 
             embed_list.extend(embed_message(
                 icon_url=inter.bot.user.avatar.url,
@@ -651,7 +651,7 @@ def get_user_strike(
             f"{active_string}"
             f"User Strike ID: {user_strike.id}\n"
             f"Description: {user_strike.strike_description}\n"
-            f"Strike Weight: **{user_strike.strike_weight}**\n"
+            f"Strikes: **{user_strike.strike_weight}**\n"
             f"Create Date: "
             f"{user_strike.date_created.strftime('%d %b %Y')}\n"
             f"{ending_string}"),
@@ -683,11 +683,11 @@ def get_user_strike_overview(
         f"Active User Strike Count: **{len(user_strike_list)}**\n"
         f"Active User Strike Weight: **{strike_weight_sum}**")
 
-    if strike_weight_sum >= 5:
+    if strike_weight_sum >= 6:
         responder.content = (
             f"**"
-            f"{user_string} has accumulated a Strike Weight of "
-            f"{strike_weight_sum}, contact leadership to resolve strikes"
+            f"{user_string} has accumulated {strike_weight_sum} "
+            f"strikes, contact leadership to resolve strikes"
             f"**")
 
     return responder
@@ -711,14 +711,14 @@ def get_user_strike_active(
     # set description
     responder.description = (
         f"User: {user_string}\n"
-        f"Active User Strike Count: **{len(user_strike_list)}**\n"
-        f"Active User Strike Weight: **{strike_weight_sum}**")
+        f"Active User Violations: **{len(user_strike_list)}**\n"
+        f"Active User Strikes: **{strike_weight_sum}**")
 
-    if strike_weight_sum >= 5:
+    if strike_weight_sum >= 6:
         responder.content = (
             f"**"
-            f"{user_string} has accumulated a Strike Weight of "
-            f"{strike_weight_sum}, contact leadership to resolve strikes"
+            f"{user_string} has accumulated {strike_weight_sum} "
+            f"strikes, contact leadership to resolve strikes"
             f"**")
 
     for user_strike in user_strike_list:
@@ -764,7 +764,7 @@ def get_user_strike_active(
                 f"{active_string}"
                 f"User Strike ID: {user_strike.id}\n"
                 f"Description: {user_strike.strike_description}\n"
-                f"Strike Weight: **{user_strike.strike_weight}**\n"
+                f"Strikes: **{user_strike.strike_weight}**\n"
                 f"Create Date: "
                 f"{user_strike.date_created.strftime('%d %b %Y')}\n"
                 f"{ending_string}"),
@@ -791,8 +791,8 @@ def get_user_strike_all(
     # set description
     responder.description = (
         f"User: {user_string}\n"
-        f"User Strike Count: **{len(user_strike_list)}**\n"
-        f"User Strike Weight: **{strike_weight_sum}**\n")
+        f"User Violations: **{len(user_strike_list)}**\n"
+        f"User Strikes: **{strike_weight_sum}**\n")
 
     active_strike_count = 0
     active_strike_weight = 0
@@ -853,7 +853,7 @@ def get_user_strike_all(
                 f"{active_string}"
                 f"User Strike ID: {user_strike.id}\n"
                 f"Description: {user_strike.strike_description}\n"
-                f"Strike Weight: **{user_strike.strike_weight}**\n"
+                f"Strikes: **{user_strike.strike_weight}**\n"
                 f"Create Date: "
                 f"{user_strike.date_created.strftime('%d %b %Y')}\n"
                 f"{ending_string}"),
@@ -863,11 +863,11 @@ def get_user_strike_all(
         f"Active User Strike Count: **{active_strike_count}**\n"
         f"Active User Strike Weight: **{active_strike_weight}**")
 
-    if active_strike_weight >= 5:
+    if active_strike_weight >= 6:
         responder.content = (
             f"**"
-            f"{user_string} has accumulated a Strike Weight of "
-            f"{active_strike_weight}, contact leadership to resolve strikes"
+            f"{user_string} has accumulated {strike_weight_sum} "
+            f"strikes, contact leadership to resolve strikes"
             f"**")
 
     return responder
@@ -904,7 +904,7 @@ def add_user_strike(
             title=f"Active User Strikes",
             description=(
                 f"User: {user.mention}"
-                f"Active User Strike Count: **0**"))
+                f"Active User Violations: **0**"))
 
     responder = get_user_strike_overview(
         user_string=user.mention,

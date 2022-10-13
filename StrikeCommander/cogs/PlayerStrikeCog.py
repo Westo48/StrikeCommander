@@ -135,7 +135,7 @@ class PlayerStrike(commands.Cog):
                     title=f"{player.name} {player.tag} Active Player Strikes",
                     description=(
                         f"Linked User: {user_string}\n"
-                        f"Active Player Strike Count: **0**"))
+                        f"Active Player Violations: **0**"))
 
                 embed_list = discord_responder.embed_message(
                     icon_url=inter.bot.user.avatar.url,
@@ -166,7 +166,7 @@ class PlayerStrike(commands.Cog):
                     title=f"{player.name} {player.tag} Active Player Strikes",
                     description=(
                         f"Linked User: {user_string}\n"
-                        f"Active Player Strike Count: **0**"))
+                        f"Active Player Violations: **0**"))
 
                 embed_list = discord_responder.embed_message(
                     icon_url=inter.bot.user.avatar.url,
@@ -197,7 +197,7 @@ class PlayerStrike(commands.Cog):
                     title=f"{player.name} {player.tag} Player Strikes",
                     description=(
                         f"Linked User: {user_string}\n"
-                        f"Player Strike Count: **0**"))
+                        f"Player Violations: **0**"))
 
                 embed_list = discord_responder.embed_message(
                     icon_url=inter.bot.user.avatar.url,
@@ -322,38 +322,39 @@ class PlayerStrike(commands.Cog):
         field_dict_list = []
         message_content = ""
 
-        async for player in clan.get_detailed_members():
-            db_player = db_responder.read_player_from_tag(
-                player_tag=player.tag)
+        if option == "overview":
+            async for player in clan.get_detailed_members():
+                db_player = db_responder.read_player_from_tag(
+                    player_tag=player.tag)
 
-            if db_player is None:
-                field_dict_list.append({
-                    'name': f"{player.name} {player.tag}",
-                    'value': f"not found in database",
-                    'inline': False})
+                if db_player is None:
+                    field_dict_list.append({
+                        'name': f"{player.name} {player.tag}",
+                        'value': f"not found in database",
+                        'inline': False})
 
-                continue
+                    continue
 
-            db_user = db_responder.read_user_from_tag(player_tag=player.tag)
+                db_user = db_responder.read_user_from_tag(
+                    player_tag=player.tag)
 
-            if db_user is None:
-                field_dict_list.append({
-                    'name': f"user with tag {player.tag}",
-                    'value': f"not found in the database",
-                    'inline': False})
+                if db_user is None:
+                    field_dict_list.append({
+                        'name': f"user with tag {player.tag}",
+                        'value': f"not found in the database",
+                        'inline': False})
 
-                continue
+                    continue
 
-            user = get(inter.guild.members, id=db_user.discord_id)
+                user = get(inter.guild.members, id=db_user.discord_id)
 
-            # user not found in server
-            if user is None:
-                user_string = f"<@{db_user.discord_id}>"
+                # user not found in server
+                if user is None:
+                    user_string = f"<@{db_user.discord_id}>"
 
-            else:
-                user_string = f"{user.mention}"
+                else:
+                    user_string = f"{user.mention}"
 
-            if option == "overview":
                 try:
                     player_strike_list = (
                         player_strike_responder.find_player_strike_active(
@@ -368,71 +369,161 @@ class PlayerStrike(commands.Cog):
                         message_content += f"{response.content}\n\n"
 
                 except NotFoundError:
-                    response = ResponderModel(
-                        title=f"{player.name} {player.tag} Active Player Strikes",
-                        description=(
-                            f"Linked User: {user_string}\n"
-                            f"Active Player Strike Count: **0**"))
+                    continue
 
-            elif option == "active":
-                try:
-                    player_strike_list = (
-                        player_strike_responder.find_player_strike_active(
-                            player_tag=player.tag))
+                # response title and description were passed
+                if (response.title is not None
+                        and response.description is not None):
+                    field_dict_list.append({
+                        'name': response.title,
+                        'value': response.description,
+                        'inline': False
+                    })
 
-                    response = player_strike_responder.get_player_strike_active(
-                        player=player,
-                        user_string=user_string,
-                        player_strike_list=player_strike_list)
+        elif option == "active" or option == "all":
+            embed_list = []
+            message_content = ""
 
-                    if response.content is not None:
-                        message_content += f"{response.content}\n\n"
+            embed_list.extend(discord_responder.embed_message(
+                icon_url=inter.bot.user.avatar.url,
+                title=clan_response.title,
+                description=clan_response.description,
+                bot_user_name=inter.me.display_name,
+                thumbnail=clan.badge.small,
+                field_list=clan_response.field_dict_list,
+                author=inter.author))
 
-                except NotFoundError:
-                    response = ResponderModel(
-                        title=f"{player.name} {player.tag} Active Player Strikes",
-                        description=(
-                            f"Linked User: {user_string}\n"
-                            f"Active Player Strike Count: **0**"))
+            async for player in clan.get_detailed_members():
+                embed_thumbnail = discord_responder.get_town_hall_url(player)
 
-            elif option == "all":
-                try:
-                    player_strike_list = (
-                        player_strike_responder.find_player_strike_all(
-                            player_tag=player.tag))
+                db_player = db_responder.read_player_from_tag(
+                    player_tag=player.tag)
 
-                    response = player_strike_responder.get_player_strike_all(
-                        player=player,
-                        user_string=user_string,
-                        player_strike_list=player_strike_list)
+                if db_player is None:
+                    embed_description = (
+                        f"{player.name} {player.tag} "
+                        f"not found in database")
 
-                    if response.content is not None:
-                        message_content += f"{response.content}\n\n"
+                    embed_list.extend(discord_responder.embed_message(
+                        icon_url=inter.bot.user.avatar.url,
+                        bot_user_name=inter.me.display_name,
+                        description=embed_description,
+                        thumbnail=embed_thumbnail,
+                        author=inter.author))
 
-                except NotFoundError:
-                    response = ResponderModel(
-                        title=f"{player.name} {player.tag} Player Strikes",
-                        description=(
-                            f"Linked User: {user_string}\n"
-                            f"Player Strike Count: **0**"))
+                    continue
 
-            else:
-                response.field_dict_list = [{
-                    'name': "incorrect option selected",
-                    'value': "please select a different option"
-                }]
+                db_user = db_responder.read_user_from_tag(
+                    player_tag=player.tag)
 
-            # response title or description were not passed
-            if (response.title is not None
-                    and response.description is not None):
-                field_dict_list.append({
-                    'name': response.title,
-                    'value': response.description,
-                    'inline': False
-                })
+                if db_user is None:
+                    embed_description = (
+                        f"could not find user with tag {player.tag} "
+                        f"in the database")
+
+                    embed_list.extend(discord_responder.embed_message(
+                        icon_url=inter.bot.user.avatar.url,
+                        bot_user_name=inter.me.display_name,
+                        description=embed_description,
+                        thumbnail=embed_thumbnail,
+                        author=inter.author))
+
+                    continue
+
+                user = get(inter.guild.members, id=db_user.discord_id)
+
+                # user not found in server
+                if user is None:
+                    user_string = f"<@{db_user.discord_id}>"
+
+                else:
+                    user_string = f"{user.mention}"
+
+                if option == "active":
+                    try:
+                        player_strike_list = (
+                            player_strike_responder.find_player_strike_active(
+                                player_tag=player.tag))
+
+                        response = player_strike_responder.get_player_strike_active(
+                            player=player,
+                            user_string=user_string,
+                            player_strike_list=player_strike_list)
+
+                        if response.content is not None:
+                            message_content += f"{response.content}\n"
+
+                    except NotFoundError:
+                        continue
+
+                elif option == "all":
+                    try:
+                        player_strike_list = (
+                            player_strike_responder.find_player_strike_all(
+                                player_tag=player.tag))
+
+                        response = player_strike_responder.get_player_strike_all(
+                            player=player,
+                            user_string=user_string,
+                            player_strike_list=player_strike_list)
+
+                        if response.content is not None:
+                            message_content += f"{response.content}\n"
+
+                    except NotFoundError:
+                        continue
+
+                else:
+                    response.field_dict_list = [{
+                        'name': "incorrect option selected",
+                        'value': "please select a different option"
+                    }]
+
+                embed_list.extend(discord_responder.embed_message(
+                    icon_url=inter.bot.user.avatar.url,
+                    title=response.title,
+                    description=response.description,
+                    bot_user_name=inter.me.display_name,
+                    thumbnail=embed_thumbnail,
+                    field_list=response.field_dict_list,
+                    author=inter.author))
+
+            if len(embed_list) == 1:
+                embed_description = (
+                    f"{clan.name} {clan.tag} has no players "
+                    f"with active violations")
+
+                embed_list.extend(discord_responder.embed_message(
+                    icon_url=inter.bot.user.avatar.url,
+                    description=embed_description,
+                    bot_user_name=inter.me.display_name,
+                    author=inter.author))
+
+            if message_content == "":
+                message_content = None
+
+            await discord_responder.send_embed_list(
+                inter,
+                embed_list,
+                content=message_content)
+
+            return
+
+        else:
+            field_dict_list = [{
+                'name': "incorrect option selected",
+                'value': "please select a different option"
+            }]
 
         if message_content == "":
             message_content = None
+
+        if len(field_dict_list) == 0:
+            field_dict_list.append({
+                'name': f"no players with active strikes",
+                'value': (f"{clan.name} {clan.tag} has no players "
+                          f"with active violations")
+            })
 
         embed_list = discord_responder.embed_message(
             icon_url=inter.bot.user.avatar.url,
@@ -589,6 +680,7 @@ class PlayerStrike(commands.Cog):
             tag: str = discord_utils.command_param_dict['tag'],
             rollover_days: int = discord_utils.command_param_dict['rollover_days'],
             persistent: bool = discord_utils.command_param_dict['persistent'],
+            missed_attacks: int = discord_utils.command_param_dict['missed_attacks'],
             war_selection: str = discord_utils.command_param_dict['war_selection']):
         """
             adds Player Strikes to those who missed war attacks 
@@ -598,6 +690,7 @@ class PlayerStrike(commands.Cog):
             option (optional): options for player strike war command
             clan_role (optional): clan role to use linked clan
             tag (optional): clan tag to show strikes for all players in the clan
+            missed_attacks (optional): only using selected missed attacks
             war_selection (optional): cwl war selection
         """
 
@@ -695,6 +788,12 @@ class PlayerStrike(commands.Cog):
             # player has no missed attacks
             if missing_attack_count == 0:
                 continue
+
+            # missed attacks were specified by user
+            # player missed attacks differ than what was specified, skip that player
+            if missed_attacks is not None:
+                if missing_attack_count != missed_attacks:
+                    continue
 
             db_player = db_responder.read_player_from_tag(
                 player_tag=player.tag)

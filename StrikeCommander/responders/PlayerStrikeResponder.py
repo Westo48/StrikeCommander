@@ -124,17 +124,17 @@ def get_player_strike(
             f"{active_string}"
             f"Player Strike ID: {player_strike.id}\n"
             f"Description: {player_strike.strike_description}\n"
-            f"Strike Weight: **{player_strike.strike_weight}**\n"
+            f"Strikes: **{player_strike.strike_weight}**\n"
             f"Create Date: "
             f"{player_strike.date_created.strftime('%d %b %Y')}\n"
             f"{ending_string}"),
         'inline': False})
 
-    if player_strike.strike_weight >= 5:
+    if player_strike.strike_weight >= 6:
         responder.content = (
             f"**"
-            f"{user_string}: {player.name} has accumulated a "
-            f"Strike Weight of {player_strike.strike_weight}, "
+            f"{user_string}: {player.name} {player.tag} has accumulated "
+            f"{player_strike.strike_weight} strikes, "
             f"contact leadership to resolve strikes"
             f"**")
 
@@ -160,14 +160,14 @@ def get_player_strike_overview(
     # set description
     responder.description = (
         f"Linked User: {user_string}\n"
-        f"Active Player Strike Count: **{len(player_strike_list)}**\n"
-        f"Active Player Strike Weight: **{strike_weight_sum}**")
+        f"Active Player Violations: **{len(player_strike_list)}**\n"
+        f"Active Player Strikes: **{strike_weight_sum}**")
 
-    if strike_weight_sum >= 5:
+    if strike_weight_sum >= 6:
         responder.content = (
             f"**"
-            f"{user_string}: {player.name} has accumulated a "
-            f"Strike Weight of {strike_weight_sum}, "
+            f"{user_string}: {player.name} {player.tag} has accumulated "
+            f"{strike_weight_sum} strikes, "
             f"contact leadership to resolve strikes"
             f"**")
 
@@ -193,14 +193,14 @@ def get_player_strike_active(
     # set description
     responder.description = (
         f"Linked User: {user_string}\n"
-        f"Active Player Strike Count: **{len(player_strike_list)}**\n"
-        f"Active Player Strike Weight: **{strike_weight_sum}**")
+        f"Active Player Violations: **{len(player_strike_list)}**\n"
+        f"Active Player Strikes: **{strike_weight_sum}**")
 
-    if strike_weight_sum >= 5:
+    if strike_weight_sum >= 6:
         responder.content = (
             f"**"
-            f"{user_string}: {player.name} has accumulated a "
-            f"Strike Weight of {strike_weight_sum}, "
+            f"{user_string}: {player.name} {player.tag} has accumulated "
+            f"{strike_weight_sum} strikes, "
             f"contact leadership to resolve strikes"
             f"**")
 
@@ -247,7 +247,7 @@ def get_player_strike_active(
                 f"{active_string}"
                 f"Player Strike ID: {player_strike.id}\n"
                 f"Description: {player_strike.strike_description}\n"
-                f"Strike Weight: **{player_strike.strike_weight}**\n"
+                f"Strikes: **{player_strike.strike_weight}**\n"
                 f"Create Date: "
                 f"{player_strike.date_created.strftime('%d %b %Y')}\n"
                 f"{ending_string}"),
@@ -331,7 +331,7 @@ def get_player_strike_all(
                 f"{active_string}"
                 f"Player Strike ID: {player_strike.id}\n"
                 f"Description: {player_strike.strike_description}\n"
-                f"Strike Weight: **{player_strike.strike_weight}**\n"
+                f"Strikes: **{player_strike.strike_weight}**\n"
                 f"Create Date: "
                 f"{player_strike.date_created.strftime('%d %b %Y')}\n"
                 f"{ending_string}"),
@@ -340,16 +340,16 @@ def get_player_strike_all(
     # set description
     responder.description = (
         f"Linked User: {user_string}\n"
-        f"Active Player Strike Count: **{active_strike_count}**\n"
-        f"Active Player Strike Weight: **{active_strike_weight}**\n"
-        f"Player Strike Count: **{len(player_strike_list)}**\n"
-        f"Player Strike Weight: **{strike_weight_sum}**")
+        f"Active Player Violations: **{active_strike_count}**\n"
+        f"Active Player Strikes: **{active_strike_weight}**\n"
+        f"Player Violations: **{len(player_strike_list)}**\n"
+        f"Player Strikes: **{strike_weight_sum}**")
 
-    if active_strike_weight >= 5:
+    if active_strike_weight >= 6:
         responder.content = (
             f"**"
-            f"{user_string}: {player.name} has accumulated a "
-            f"Strike Weight of {strike_weight_sum}, "
+            f"{user_string}: {player.name} {player.tag} has accumulated "
+            f"{strike_weight_sum} active strikes, "
             f"contact leadership to resolve strikes"
             f"**")
 
@@ -388,7 +388,7 @@ def add_player_strike(
             title=f"{player.name} {player.tag} Active Player Strikes",
             description=(
                 f"Linked User: {user_string}\n"
-                f"Active Player Strike Count: **0**"))
+                f"Active Player Violations: **0**"))
 
     responder = get_player_strike_overview(
         player=player,
